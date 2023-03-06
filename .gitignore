@@ -127,3 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# vim swapfiles
+.*.swp
+
+# CA crt and key
+ca.crt
+ca.key
