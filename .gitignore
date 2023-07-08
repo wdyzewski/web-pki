@@ -134,3 +134,7 @@ dmypy.json
 # CA crt and key
 ca.crt
 ca.key
+
+# testing keys and CSRs
+testing/*.key
+testing/*.csr

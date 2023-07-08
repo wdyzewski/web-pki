@@ -1,0 +1,6 @@
+#!/bin/bash
+
+ISSUER=test_issuer
+SUBJECT="/C=PL/ST=Krakow/CN=${ISSUER}"
+
+openssl req -new -newkey rsa:2048 -subj ${SUBJECT} -nodes -keyout ${ISSUER}.key -out ${ISSUER}.csr
