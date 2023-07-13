@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
 
-{% block title %}Sign{% endblock %}
+{% block title %}Upload CSR{% endblock %}
 
 {% block content %}
-<h1>Sign</h1>
+<h1>Upload CSR</h1>
 <form method="POST" action="." enctype="multipart/form-data">
 {% csrf_token %}
-{{ form.as_table }}
+{{ form.as_div }}
 <button type="submit">Send!</button>
 </form>
 {% endblock %}
