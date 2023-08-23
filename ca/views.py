@@ -4,6 +4,7 @@ from django.utils import timezone
 import hashlib
 from .forms import CSRForm, SignForm
 from .models import Certificate
+from .common import get_csr_info, sign_csr
 
 # Create your views here.
 
@@ -27,11 +28,13 @@ def sign(request, id):
     cert = get_object_or_404(Certificate, id=id)
     checksum = hashlib.sha256(cert.csr.encode()).hexdigest()
     # TODO check permissions to view this cert
+    csr_info = get_csr_info(cert.csr)
     if request.method == 'POST':
         form = SignForm(request.POST)
         if form.is_valid() and form.cleaned_data['csr_checksum'] == checksum:
+            sign_csr(cert.csr)
             print('You have just signed a CSR!')
             # TODO
     # in case of any problem - just return to plain confirmation form
     form = SignForm({'csr_checksum': checksum})
-    return render(request, 'sign.html', {'form': form})
+    return render(request, 'sign.html', {'info': csr_info, 'form': form})
