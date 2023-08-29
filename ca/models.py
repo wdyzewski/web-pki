@@ -46,6 +46,5 @@ class Certificate(models.Model):
     approver = models.ForeignKey(User, null=True, related_name='%(class)s_certificate_approver', on_delete=models.CASCADE)
     ca = models.ForeignKey(CertificateAuthority, null=True, on_delete=models.CASCADE)
 
-
     def __str__(self) -> str:
         return f'{self.get_status_display()} Certificate requested by {self.requester.username}'

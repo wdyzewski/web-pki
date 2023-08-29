@@ -10,12 +10,17 @@ from .common import get_csr_info, sign_csr
 # Create your views here.
 
 @login_required
-def upload_csr(request):
+def list_user_certs(request):
+    certificates = Certificate.objects.filter(requester=request.user)
+    return render(request, 'list_user_certs.html', {'certificates': certificates})
+
+@login_required
+def new_csr(request):
     if request.method == 'POST':
         form = CSRForm(request.POST, request.FILES)
         if form.is_valid():
             cert = Certificate(csr=form.cleaned_data['csr'])
-            cert.requested_by = request.user
+            cert.requester = request.user
             cert.sign_date = now()
             print(cert)
             cert.save()

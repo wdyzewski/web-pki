@@ -4,8 +4,8 @@
 
 {% block content %}
 {% if user.is_authenticated %}
-  Hi {{ user.username }}!
-  <p><a href="{% url 'logout' %}">Log Out</a></p>
+  <h1>Welcome {{ user.username }}!</h1>
+  <p><a href="{% url 'list_user_certificates' %}">View your certficates</a></p>
 {% else %}
   <div style="text-align: center;" class="">
     <i class="fa fa-lock fa-5x" aria-hidden="true"></i>

@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}List of your certificates{% endblock %}
+
+{% block content %}
+<h1>List of certficates that you requested</h1>
+
+<a class="btn btn-primary bg-success" role="button" href="/certs/new/">Request new certificate</a>
+
+<table class="table table-hover">
+    <tr><th>ID</th><th>Not before</th><th>Not after</th><th>CA</th></tr>
+{% for cert in certificates %}
+    <tr><td>{{ cert.id }}</td><td>PLACEHOLDER</td><td>PLACEHOLDER</td><td>{{ cert.ca }}</td></tr>
+{% endfor %}
+</table>
+{% endblock %}
