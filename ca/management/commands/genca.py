@@ -6,6 +6,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 from django.core.management.base import BaseCommand
 
+from ca.models import CertificateAuthority
 
 class Command(BaseCommand):
     help = 'Generates new CA'
@@ -19,7 +20,8 @@ class Command(BaseCommand):
         parser.add_argument('--organizational_unit', '--ou', required=False)
         parser.add_argument('--common_name', '--cn', required=True)
         parser.add_argument('--validity', type=int, help='CA validity (numer of days)', default=10*365)
-        parser.add_argument('--path_prefix', help='Prefix of the path for CA certificate and key. Passing here `/home/admin/my_great_ca` will result in saving files `/home/admin/my_great_ca.{crt,key}`', default='ca')
+        parser.add_argument('--save', help='Save newly created CA files on disk. Requires passing prefix of the path for CA certificate and key, eg. passing here `/home/admin/my_great_ca` will result in saving files `/home/admin/my_great_ca.{crt,key}`')
+        parser.add_argument('--import', action='store_true', help='Import newly created CA into the system')
 
     def _get_x509_subject_name(self, options):
         name = []
@@ -33,7 +35,6 @@ class Command(BaseCommand):
         ]
         for oid, key in mapping:
             if key in options and options[key] is not None:
-                print(f'Using value for {key}: `{options[key]}`')
                 name.append(x509.NameAttribute(oid, options[key]))
         return name
     
@@ -56,28 +57,44 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        # Generating private key
         self.stdout.write(f'Generating {options["key_size"]} bytes key...')
         key = rsa.generate_private_key(
             public_exponent=65537,
             key_size=options['key_size']
         )
-        # Write our key to disk for safe keeping
-        with open(options['path_prefix'] + '.key', "wb") as f:
-            f.write(key.private_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PrivateFormat.TraditionalOpenSSL,
-                encryption_algorithm=serialization.NoEncryption()
-            ))
-        self.stdout.write(self.style.SUCCESS('Successfully generated and saved key'))
+        ca_private_key = key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption()
+        ).decode()
 
+        # Generating self-signed CA (based on key `key`)
         subject_name = self._get_x509_subject_name(options)
         builder = self._get_ca_cert_builder(key, subject_name, options['validity'])
         certificate = builder.sign(
             private_key=key, algorithm=hashes.SHA256()
         )
-        with open(options['path_prefix'] + '.crt', "wb") as f:
-            f.write(certificate.public_bytes(
-                encoding=serialization.Encoding.PEM
-            ))
+        ca_certificate = certificate.public_bytes(
+            encoding=serialization.Encoding.PEM
+        ).decode()
 
-        self.stdout.write(self.style.SUCCESS('Successfully generated and saved CA'))
+        if options.get('save'):
+            key_file = options['save'] + '.key'
+            with open(key_file, 'w') as f:
+                f.write(ca_private_key)
+            self.stdout.write(self.style.SUCCESS(f'Successfully saved key in {key_file}'))
+            cert_file = options['save'] + '.crt'
+            with open(cert_file, 'w') as f:
+                f.write(ca_certificate)
+            self.stdout.write(self.style.SUCCESS(f'Successfully saved CA certificate in {cert_file}'))
+
+        if options.get('import'):
+            ca = CertificateAuthority(
+                private_key=ca_private_key,
+                public_part=ca_certificate,
+                shortname=certificate.subject.rfc4514_string(),
+                longname=f'CA certificate for {certificate.subject.rfc4514_string()} imported via `genca.py --import`',
+                comment="Put something here manually. Comment's content won't be readable for unprivileged users"
+            )
+            ca.save()

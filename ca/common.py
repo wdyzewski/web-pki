@@ -4,7 +4,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.serialization import load_pem_private_key, Encoding
 from datetime import datetime, timedelta
 
-CRL_URI = 'URI:https://example.com/crl.pem'
+CRL_URI = 'https://example.com/crl.pem'
 
 def is_valid_csr(input : str) -> bool:
     try:
@@ -20,7 +20,7 @@ def get_ca() -> x509.Certificate:
 
 def get_ca_private_key() -> rsa.RSAPrivateKey:
     with open('ca.key', 'rb') as f:
-        key = load_pem_private_key(f.read())
+        key = load_pem_private_key(f.read(), password=None)
     return key
 
 def get_csr_info(csr_str : str) -> dict:
@@ -41,13 +41,18 @@ def get_default_certificate_signer() -> x509.CertificateBuilder:
     ).not_valid_after(
         now + cert_validity
     ).add_extension(
-        x509.CRLDistributionPoints(
-            [CRL_URI]
-        ),
+        x509.CRLDistributionPoints([
+            x509.DistributionPoint(
+                [x509.UniformResourceIdentifier(CRL_URI)],
+                relative_name=None,
+                reasons=None,
+                crl_issuer=None
+            )
+        ]),
         critical=False
     )
 
-def sign_csr(csr_str : str):
+def sign_csr(csr_str : str) -> str:
     csr = x509.load_pem_x509_csr(csr_str.encode())
     ca = get_ca()
     cert = get_default_certificate_signer().subject_name(
@@ -58,7 +63,7 @@ def sign_csr(csr_str : str):
         csr.public_key()
     ).sign(get_ca_private_key(), hashes.SHA256())
 
-    return cert.public_bytes(Encoding.PEM)
+    return cert.public_bytes(Encoding.PEM).decode()
 
 def revoke_cert():
     """TODO"""

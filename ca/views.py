@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
-from django.utils import timezone
+from django.utils.timezone import now
 import hashlib
 from .forms import CSRForm, SignForm
 from .models import Certificate
@@ -15,7 +15,7 @@ def upload_csr(request):
         if form.is_valid():
             cert = Certificate(csr=form.cleaned_data['csr'])
             cert.requested_by = request.user
-            cert.sign_date = timezone.now()
+            cert.sign_date = now()
             print(cert)
             cert.save()
             return redirect('sign', id=cert.id)
@@ -32,9 +32,12 @@ def sign(request, id):
     if request.method == 'POST':
         form = SignForm(request.POST)
         if form.is_valid() and form.cleaned_data['csr_checksum'] == checksum:
-            sign_csr(cert.csr)
+            new_cert = sign_csr(cert.csr)
             print('You have just signed a CSR!')
-            # TODO
+            cert.sign_date = now()
+            cert.cert = new_cert
+            cert.save()
+            # TODO redirect to certificate info page
     # in case of any problem - just return to plain confirmation form
     form = SignForm({'csr_checksum': checksum})
     return render(request, 'sign.html', {'info': csr_info, 'form': form})
