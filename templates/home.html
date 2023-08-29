@@ -7,7 +7,9 @@
   Hi {{ user.username }}!
   <p><a href="{% url 'logout' %}">Log Out</a></p>
 {% else %}
-  <p>You are not logged in</p>
-  <a href="{% url 'login' %}">Log In</a>
+  <div style="text-align: center;" class="">
+    <i class="fa fa-lock fa-5x" aria-hidden="true"></i>
+    <h1>Content available only for authenticated users</h1>
+  </div>
 {% endif %}
 {% endblock %}

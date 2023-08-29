@@ -5,25 +5,64 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}WEB-PKI{% endblock %}</title>
   {% load static %}
-  <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/font-awesome.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
   <script src="{% static 'js/bootstrap.min.js' %}"></script>
 </head>
 <body>
   <div class="container">
+
+    <nav class="navbar navbar-expand-lg bg-dark-subtle">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/">WEB-PKI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <!--
+            <li class="nav-item">
+              <a class="nav-link active" aria-current="page" href="/">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">Link</a>
+            </li>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Dropdown
+              </a>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#">Action</a></li>
+                <li><a class="dropdown-item" href="#">Another action</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#">Something else here</a></li>
+              </ul>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link disabled" aria-disabled="true">Disabled</a>
+            </li>
+            -->
+          </ul>
+          <span class="navbar-text">
+            {% if user.is_authenticated %}
+            <i class="fa fa-user" aria-hidden="true"></i> {{ user.username }}
+            <a class="btn btn-primary" role="button" href="/accounts/logout">Logout</a>
+            {% else %}
+            <i class="fa fa-user-secret" aria-hidden="true"></i> Unauthorized
+            <a class="btn btn-primary" role="button" href="/accounts/login">Login</a>
+            {% endif %}
+          </span>
+        </div>
+      </div>
+    </nav>
+
+<!--
     <ul class="nav bg-info">
-      <li class="nav-item">
-        <a class="nav-link link-light" href="/">HOME</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link link-light" href="/accounts/login">LOGIN</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link link-light" href="/accounts/logout">LOGOUT</a>
-      </li>
       <li class="nav-item">
         <a class="nav-link link-light" href="/ca/sign">SIGN</a>
       </li>
     </ul>
+-->
     <main>
       {% block content %}
       {% endblock %}
