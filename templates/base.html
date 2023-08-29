@@ -7,7 +7,7 @@
   {% load static %}
   <link rel="stylesheet" href="{% static 'css/font-awesome.min.css' %}">
   <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
-  <script src="{% static 'js/bootstrap.min.js' %}"></script>
+  <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
 </head>
 <body>
   <div class="container">
@@ -46,10 +46,10 @@
           <span class="navbar-text">
             {% if user.is_authenticated %}
             <i class="fa fa-user" aria-hidden="true"></i> {{ user.username }}
-            <a class="btn btn-primary" role="button" href="/accounts/logout">Logout</a>
+            <a class="btn btn-primary" role="button" href="{% url 'logout' %}">Logout</a>
             {% else %}
             <i class="fa fa-user-secret" aria-hidden="true"></i> Unauthorized
-            <a class="btn btn-primary" role="button" href="/accounts/login">Login</a>
+            <a class="btn btn-primary" role="button" href="{% url 'login' %}">Login</a>
             {% endif %}
           </span>
         </div>

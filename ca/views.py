@@ -15,7 +15,7 @@ def list_user_certs(request):
     return render(request, 'list_user_certs.html', {'certificates': certificates})
 
 @login_required
-def new_csr(request):
+def upload_csr(request):
     if request.method == 'POST':
         form = CSRForm(request.POST, request.FILES)
         if form.is_valid():
@@ -28,6 +28,12 @@ def new_csr(request):
     else:
         form = CSRForm()
     return render(request, 'upload_csr.html', {'form': form})
+
+
+@login_required
+def gen_csr(request):
+    # TODO
+    return HttpResponse("Not Implemented Yet")
 
 @login_required
 def sign(request, id):
