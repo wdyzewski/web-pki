@@ -98,3 +98,4 @@ class Command(BaseCommand):
                 comment="Put something here manually. Comment's content won't be readable for unprivileged users"
             )
             ca.save()
+            self.stdout.write(self.style.SUCCESS('Successfully saved CA in database'))
