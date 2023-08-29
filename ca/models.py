@@ -34,14 +34,14 @@ CERTIFICATE_STATUS_CHOICES = [
 ]
 
 class Certificate(models.Model):
-    status = models.CharField(max_length=1, choices=CERTIFICATE_STATUS_CHOICES)
-    requester = models.ForeignKey(User, related_name='%(class)s_certificate_requester', on_delete=models.CASCADE)
+    status = models.CharField(max_length=1, choices=CERTIFICATE_STATUS_CHOICES, default=CERTIFICATE_STATUS_CHOICES[0][0])
+    requester = models.ForeignKey(User, null=True, related_name='%(class)s_certificate_requester', on_delete=models.CASCADE)
     csr = models.TextField()
     csr_upload_date = models.DateTimeField(auto_now=True)
     cert = models.TextField(blank=True)
     sign_date = models.DateTimeField(blank=True)
-    approver = models.ForeignKey(User, related_name='%(class)s_certificate_approver', on_delete=models.CASCADE)
-    ca = models.ForeignKey(CertificateAuthority, on_delete=models.CASCADE)
+    approver = models.ForeignKey(User, null=True, related_name='%(class)s_certificate_approver', on_delete=models.CASCADE)
+    ca = models.ForeignKey(CertificateAuthority, null=True, on_delete=models.CASCADE)
 
 
     def __str__(self) -> str:
