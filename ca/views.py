@@ -5,7 +5,7 @@ from django.utils.timezone import now
 import hashlib
 from .forms import CSRForm, SignForm
 from .models import Certificate, CertificateAuthority
-from .common import get_csr_info, sign_csr
+from .common import get_csr_info, sign_csr, get_new_csr_private_key
 
 # Create your views here.
 
@@ -32,7 +32,10 @@ def upload_csr(request):
 
 @login_required
 def gen_csr(request):
-    # TODO
+    csr, pkey = get_new_csr_private_key(request.user.username)
+    print(csr)
+    print(pkey)
+    # TODO - print CSR and pkey; next: proceed to signing
     return HttpResponse("Not Implemented Yet")
 
 @login_required

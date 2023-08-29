@@ -1,10 +1,11 @@
 from cryptography import x509
-from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.serialization import load_pem_private_key, Encoding
 from datetime import datetime, timedelta
 
-CRL_URI = 'https://example.com/crl.pem'
+CRL_URI = 'https://example.com/crl.pem' # FIXME
+DEFAULT_KEY_SIZE = 4096
 
 def is_valid_csr(input : str) -> bool:
     try:
@@ -14,14 +15,33 @@ def is_valid_csr(input : str) -> bool:
         return False
 
 def get_ca() -> x509.Certificate:
-    with open('ca.crt', 'rb') as f:
+    with open('ca.crt', 'rb') as f: # FIXME
         ca = x509.load_pem_x509_certificate(f.read())
     return ca
 
 def get_ca_private_key() -> rsa.RSAPrivateKey:
-    with open('ca.key', 'rb') as f:
+    with open('ca.key', 'rb') as f: # FIXME
         key = load_pem_private_key(f.read(), password=None)
     return key
+
+def get_new_csr_private_key(common_name):
+    """
+    Generates (on behalf of user) and returns new CSR and matching private key.
+    """
+    key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=DEFAULT_KEY_SIZE
+    )
+    private_key_pem = key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=serialization.NoEncryption()
+    ).decode()
+    csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
+        x509.NameAttribute(x509.NameOID.COMMON_NAME, common_name),
+    ])).sign(key, hashes.SHA256())
+    csr_pem = csr.public_bytes(serialization.Encoding.PEM).decode()
+    return csr_pem, private_key_pem
 
 def get_csr_info(csr_str : str) -> dict:
     csr = x509.load_pem_x509_csr(csr_str.encode())
@@ -55,6 +75,7 @@ def get_default_certificate_signer() -> x509.CertificateBuilder:
 def sign_csr(csr_str : str) -> str:
     csr = x509.load_pem_x509_csr(csr_str.encode())
     ca = get_ca()
+    # TODO make sure subject is correct
     cert = get_default_certificate_signer().subject_name(
         csr.subject
     ).issuer_name(
