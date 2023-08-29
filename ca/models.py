@@ -15,14 +15,17 @@ SIGNING_CONFIG_CHOICES = [
 class CertificateAuthority(models.Model):
     private_key = models.TextField()
     public_part = models.TextField()
-    shortname = models.CharField(max_length=10)
+    shortname = models.CharField(max_length=10, unique=True)
     longname = models.CharField(max_length=100)
     comment = models.CharField(max_length=300)
     personal_signing = models.CharField(max_length=1, choices=SIGNING_CONFIG_CHOICES, default=SigningConfig.DISABLED)
     server_signing = models.CharField(max_length=1, choices=SIGNING_CONFIG_CHOICES, default=SigningConfig.DISABLED)
 
     def __str__(self) -> str:
-        return self.longname
+        return f'{self.shortname}: {self.longname}'
+    
+    class Meta:
+        verbose_name_plural = 'Certificate Authorities'
 
 
 CERTIFICATE_STATUS_CHOICES = [

@@ -1,9 +1,10 @@
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
 from django.utils.timezone import now
 import hashlib
 from .forms import CSRForm, SignForm
-from .models import Certificate
+from .models import Certificate, CertificateAuthority
 from .common import get_csr_info, sign_csr
 
 # Create your views here.
@@ -41,3 +42,19 @@ def sign(request, id):
     # in case of any problem - just return to plain confirmation form
     form = SignForm({'csr_checksum': checksum})
     return render(request, 'sign.html', {'info': csr_info, 'form': form})
+
+def pem_as_http_response(contents, filename):
+    return HttpResponse(
+        contents,
+        content_type='application/x-pem-file',
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+    )
+
+def get_ca_pem(request, cashortname):
+    ca = get_object_or_404(CertificateAuthority, shortname=cashortname)
+    return pem_as_http_response(ca.public_part, f'{cashortname}.pem')
+
+def get_ca_crl(request, cashortname):
+    ca = get_object_or_404(CertificateAuthority, shortname=cashortname)
+    # TODO
+    return HttpResponse("Not Implemented Yet")

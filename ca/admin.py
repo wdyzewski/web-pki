@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Certificate
+from .models import Certificate, CertificateAuthority
 
 @admin.action(description='Sign selected certificates')
 def sign_certificate(modeladmin, request, queryset):
@@ -14,3 +14,4 @@ class CertificateAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Certificate, CertificateAdmin)
+admin.site.register(CertificateAuthority)
