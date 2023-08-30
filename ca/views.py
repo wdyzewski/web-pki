@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.timezone import now
 from .forms import CSRForm, CertDetailsForm
 from .models import Certificate, CertificateAuthority, CertificateStatus
-from .common import get_new_csr_private_key, autosign
+from .common import get_new_csr_private_key, autosign, revoke_cert
 
 # Create your views here.
 
@@ -80,7 +80,12 @@ def cert_download(request, id):
     cert = get_object_or_404(Certificate, id=id, requester=request.user)
     return pem_as_http_response(cert.cert, f'{request.user.username}.pem')
 
+@login_required
+def cert_revoke(request, id):
+    cert = get_object_or_404(Certificate, id=id, requester=request.user)
+    revoke_cert(cert)
+    return redirect('list_user_certificates')
+
 def get_ca_crl(request, cashortname):
     ca = get_object_or_404(CertificateAuthority, shortname=cashortname)
-    # TODO
-    return HttpResponse("Not Implemented Yet")
+    return pem_as_http_response(ca.revoked_list, f'{cashortname}.crl')

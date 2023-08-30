@@ -1,16 +1,29 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from .models import Certificate, CertificateAuthority
-
-@admin.action(description='Sign selected certificates')
-def sign_certificate(modeladmin, request, queryset):
-    print('Called admin.sign_certificate(...)')
-
-@admin.action(description='Revoke selected certificates')
-def revoke_certificate(modeladmin, request, queryset):
-    print('Called admin.revoke_certificate(...)')
+from .common import sign_certificate, revoke_cert
 
 class CertificateAdmin(admin.ModelAdmin):
-    actions = [sign_certificate, revoke_certificate]
+    actions = ['admin_sign_certificate', 'admin_revoke_certificate']
+
+    @admin.action(description='Sign selected certificate requests')
+    def admin_sign_certificate(self, request, queryset):
+        for cert in queryset:
+            sign_certificate(cert, request.user)
+        self.message_user(
+            request,
+            f'{len(queryset)} certificates signed',
+            messages.SUCCESS
+        )
+
+    @admin.action(description='Revoke selected certificates')
+    def admin_revoke_certificate(self, request, queryset):
+        for cert in queryset:
+            revoke_cert(cert)
+        self.message_user(
+            request,
+            f'{len(queryset)} certificates revoked',
+            messages.SUCCESS
+        )
 
 
 admin.site.register(Certificate, CertificateAdmin)

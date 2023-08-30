@@ -5,6 +5,42 @@
 {% block content %}
 <h1>List of certficates that you requested</h1>
 
+<div class="modal fade" id="revokeModal" tabindex="-1" aria-labelledby="revokeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h1 class="modal-title fs-5" id="revokeModalLabel">Are you sure?</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <p>This is one-time operation - revoking certificate cannot be undone! Do you still want to proceed?</p>
+        </div>
+        <div class="modal-footer">
+            <a href="#" class="btn btn-secondary" data-bs-dismiss="modal">NO, cancel</a>
+            <a href="#" id="a-revoke" class="btn btn-danger">YES, revoke</a>
+        </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const revokeModal = document.getElementById('revokeModal')
+if (revokeModal) {
+    revokeModal.addEventListener('show.bs.modal', event => {
+        // Button that triggered the modal
+        const button = event.relatedTarget
+        // Extract info from data-bs-* attributes
+        const link = button.getAttribute('data-bs-link')
+        // If necessary, you could initiate an Ajax request here
+        // and then do the updating in a callback.
+
+        // Update the modal's content.
+        const modalLink = revokeModal.querySelector('#a-revoke')
+        modalLink.href = link
+    })
+}
+</script>
+
 <div class="dropdown">
     <button class="btn btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
         Request new certificate
@@ -16,9 +52,28 @@
 </div>
 
 <table class="table table-hover">
-    <tr><th>ID</th><th>Not before</th><th>Not after</th><th>CA</th></tr>
-{% for cert in certificates %}
-    <tr><td>{{ cert.id }}</td><td>PLACEHOLDER</td><td>PLACEHOLDER</td><td>{{ cert.ca }}</td></tr>
-{% endfor %}
+    <tr>
+        <th>ID</th>
+        <th>Request date</th>
+        <th>CA</th>
+        <th>Certificate status</th>
+        <th>Download</th>
+        <th>Revoke</th>
+    </tr>
+    {% for cert in certificates %}
+    <tr>
+        <td>{{ cert.id }}</td>
+        <td>{{ cert.csr_upload_date }}</td>
+        <td>{{ cert.ca.longname }}</td>
+        <td>{{ cert.get_status_display }}</td>
+        {% if cert.cert %}
+        <td><a href="{% url 'cert_download' cert.id %}" class="btn btn-primary">Download</a></td>
+        <td><a data-bs-toggle="modal" data-bs-target="#revokeModal" data-bs-link="{% url 'cert_revoke' cert.id %}" class="btn btn-danger">Revoke</a></td>
+        {% else %}
+        <td><a href="#" class="btn btn-secondary disabled" tabindex="-1" role="button" aria-disabled="true">N/A</a></td>
+        <td><a href="#" class="btn btn-secondary disabled" tabindex="-1" role="button" aria-disabled="true">N/A</a></td>
+        {% endif %}
+    </tr>
+    {% endfor %}
 </table>
 {% endblock %}
