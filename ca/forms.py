@@ -23,9 +23,6 @@ class CSRForm(forms.Form):
         if not is_valid_csr(cleaned_data['csr']):
             raise forms.ValidationError('Passed text/file is not valid CSR in PEM format')
         return cleaned_data
-    
-class SignForm(forms.Form):
-    csr_checksum = forms.CharField(widget=forms.HiddenInput())
 
 class CertDetailsForm(forms.ModelForm):
     class Meta:
@@ -38,5 +35,5 @@ class CertDetailsForm(forms.ModelForm):
     def clean(self) -> Dict[str, Any]:
         cleaned_data = super().clean()
         if not check_ca_purpose(cleaned_data['ca'], cleaned_data['purpose']):
-            raise forms.ValidationError('This CA is currently not available for signing such certificates')
+            raise forms.ValidationError('This CA is currently not available for signing this type of certificates')
         return cleaned_data

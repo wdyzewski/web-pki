@@ -3,7 +3,9 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.serialization import load_pem_private_key, Encoding
 from datetime import datetime, timedelta
-from .models import CertificateAuthority, CertificatePurpose, SigningConfig
+from django.contrib.auth.models import User
+from django.utils.timezone import now
+from .models import Certificate, CertificateAuthority, SigningConfig, CertificateStatus
 
 CRL_URI = 'https://example.com/crl.pem' # FIXME
 DEFAULT_KEY_SIZE = 4096
@@ -14,16 +16,6 @@ def is_valid_csr(input : str) -> bool:
         return True
     except ValueError:
         return False
-
-def get_ca() -> x509.Certificate:
-    with open('ca.crt', 'rb') as f: # FIXME
-        ca = x509.load_pem_x509_certificate(f.read())
-    return ca
-
-def get_ca_private_key() -> rsa.RSAPrivateKey:
-    with open('ca.key', 'rb') as f: # FIXME
-        key = load_pem_private_key(f.read(), password=None)
-    return key
 
 def get_new_csr_private_key(common_name):
     """
@@ -43,14 +35,6 @@ def get_new_csr_private_key(common_name):
     ])).sign(key, hashes.SHA256())
     csr_pem = csr.public_bytes(serialization.Encoding.PEM).decode()
     return csr_pem, private_key_pem
-
-def get_csr_info(csr_str : str) -> dict:
-    csr = x509.load_pem_x509_csr(csr_str.encode())
-    return {
-        'Public key size': csr.public_key().key_size,
-        'Certificate Sign Request (in PEM format)': csr_str,
-        'Certifcate Authority': get_ca().subject.rfc4514_string(),
-    }
 
 def get_default_certificate_signer() -> x509.CertificateBuilder:
     now = datetime.utcnow()
@@ -73,27 +57,42 @@ def get_default_certificate_signer() -> x509.CertificateBuilder:
         critical=False
     )
 
-def sign_csr(csr_str : str) -> str:
-    csr = x509.load_pem_x509_csr(csr_str.encode())
-    ca = get_ca()
+def sign_csr(csr     : x509.CertificateSigningRequest,
+             ca_cert : x509.Certificate,
+             ca_priv : rsa.RSAPrivateKey) -> x509.Certificate:
     # TODO make sure subject is correct
     cert = get_default_certificate_signer().subject_name(
         csr.subject
     ).issuer_name(
-        ca.subject
+        ca_cert.subject
     ).public_key(
         csr.public_key()
-    ).sign(get_ca_private_key(), hashes.SHA256())
-
-    return cert.public_bytes(Encoding.PEM).decode()
+    ).sign(ca_priv, hashes.SHA256())
+    return cert
 
 def revoke_cert():
     """TODO"""
 
 def check_ca_purpose(ca : CertificateAuthority, purpose : str) -> bool:
-    if purpose == CertificatePurpose.PERSONAL:
-        return ca.personal_signing != SigningConfig.DISABLED
-    elif purpose == CertificatePurpose.SERVER:
-        return ca.server_signing != SigningConfig.DISABLED
-    else:
-        raise NotImplementedError("check_ca_purpose didn't expect this type of purpose")
+    return ca.get_signing_config(purpose) != SigningConfig.DISABLED
+
+def sign_certificate(certificate : Certificate, signer : User):
+    if certificate.status != CertificateStatus.READY_TO_SIGN:
+        return
+    csr = x509.load_pem_x509_csr(certificate.csr.encode())
+    ca_cert = x509.load_pem_x509_certificate(certificate.ca.public_part.encode())
+    ca_pkey = load_pem_private_key(certificate.ca.private_key.encode(), password=None)
+    signed_cert = sign_csr(csr, ca_cert, ca_pkey)
+    certificate.cert = signed_cert.public_bytes(Encoding.PEM).decode()
+    certificate.status = CertificateStatus.SIGNED
+    certificate.approver = signer
+    certificate.sign_date = now()
+    certificate.save()
+
+def autosign(certificate : Certificate):
+    """
+    Signs CSR from Certificate object but only if CA is configured to autosign such certificate types.
+    """
+    if not certificate.ca.get_signing_config(certificate.purpose) == SigningConfig.AUTOSIGN:
+        return
+    sign_certificate(certificate, certificate.requester)

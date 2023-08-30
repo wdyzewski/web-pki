@@ -21,6 +21,14 @@ class CertificateAuthority(models.Model):
     personal_signing = models.CharField(max_length=1, choices=SIGNING_CONFIG_CHOICES, default=SigningConfig.DISABLED)
     server_signing = models.CharField(max_length=1, choices=SIGNING_CONFIG_CHOICES, default=SigningConfig.DISABLED)
 
+    def get_signing_config(self, purpose):
+        if purpose == CertificatePurpose.PERSONAL:
+            return self.personal_signing
+        elif purpose == CertificatePurpose.SERVER:
+            return self.server_signing
+        else:
+            raise NotImplementedError('CA has no information about such purpose')
+
     def __str__(self) -> str:
         return f'{self.shortname}: {self.longname}'
     

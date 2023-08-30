@@ -3,10 +3,9 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
 from django.utils.timezone import now
-import hashlib
-from .forms import CSRForm, SignForm, CertDetailsForm
+from .forms import CSRForm, CertDetailsForm
 from .models import Certificate, CertificateAuthority, CertificateStatus
-from .common import get_csr_info, sign_csr, get_new_csr_private_key
+from .common import sign_csr, get_new_csr_private_key, autosign
 
 # Create your views here.
 
@@ -46,31 +45,12 @@ def gen_csr(request):
     return render(request, 'generated_csr.html', context)
 
 @login_required
-def sign(request, id):
-    cert = get_object_or_404(Certificate, id=id)
-    checksum = hashlib.sha256(cert.csr.encode()).hexdigest()
-    # TODO check permissions to view this cert
-    csr_info = get_csr_info(cert.csr)
-    if request.method == 'POST':
-        form = SignForm(request.POST)
-        if form.is_valid() and form.cleaned_data['csr_checksum'] == checksum:
-            new_cert = sign_csr(cert.csr)
-            print('You have just signed a CSR!')
-            cert.sign_date = now()
-            cert.cert = new_cert
-            cert.save()
-            # TODO redirect to certificate info page
-    # in case of any problem - just return to plain confirmation form
-    form = SignForm({'csr_checksum': checksum})
-    return render(request, 'sign.html', {'info': csr_info, 'form': form})
-
-@login_required
 def cert_details(request, id):
     cert = get_object_or_404(Certificate, id=id, requester=request.user)
     if request.method == 'POST':
         form = CertDetailsForm(request.POST, instance=cert)
         if form.is_valid():
-            cert = form.save(commit=False) # don't write to DB, just get Certificate
+            cert = form.save(commit=False) # don't write to DB, just get Certificate object
             cert.status = CertificateStatus.READY_TO_SIGN
             cert.save()
             return redirect('cert_submitted', id=cert.id)
@@ -80,7 +60,9 @@ def cert_details(request, id):
 
 @login_required
 def cert_submitted(request, id):
-    pass
+    cert = get_object_or_404(Certificate, id=id, requester=request.user)
+    autosign(cert)
+    return render(request, 'cert_submitted.html', {'cert': cert})
 
 def pem_as_http_response(contents, filename):
     return HttpResponse(
