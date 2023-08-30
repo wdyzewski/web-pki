@@ -28,12 +28,28 @@ class CertificateAuthority(models.Model):
         verbose_name_plural = 'Certificate Authorities'
 
 
+class CertificatePurpose:
+    PERSONAL = 'P'
+    SERVER = 'S'
+
+CERTIFICATE_PURPOSE_CHOICES = [
+    (CertificatePurpose.PERSONAL, 'Personal'),
+    (CertificatePurpose.SERVER, 'Server'),
+]
+
+class CertificateStatus:
+    CSR_UPLOADED = 'U'
+    READY_TO_SIGN = 'T'
+    SIGNED = 'S'
+    EXPIRED = 'E'
+    REVOKED = 'R'
+
 CERTIFICATE_STATUS_CHOICES = [
-    ('U', 'CSR uploaded'),
-    ('T', 'Ready to sign'),
-    ('S', 'Signed'),
-    ('E', 'Expired'),
-    ('R', 'Revoked')
+    (CertificateStatus.CSR_UPLOADED, 'CSR uploaded'),
+    (CertificateStatus.READY_TO_SIGN, 'Ready to sign'),
+    (CertificateStatus.SIGNED, 'Signed'),
+    (CertificateStatus.EXPIRED, 'Expired'),
+    (CertificateStatus.REVOKED, 'Revoked')
 ]
 
 class Certificate(models.Model):
@@ -41,10 +57,12 @@ class Certificate(models.Model):
     requester = models.ForeignKey(User, null=True, related_name='%(class)s_certificate_requester', on_delete=models.CASCADE)
     csr = models.TextField()
     csr_upload_date = models.DateTimeField(auto_now=True)
+    purpose = models.CharField(max_length=1, choices=CERTIFICATE_PURPOSE_CHOICES, default=CertificatePurpose.PERSONAL)
     cert = models.TextField(blank=True)
-    sign_date = models.DateTimeField(blank=True)
+    sign_date = models.DateTimeField(null=True)
     approver = models.ForeignKey(User, null=True, related_name='%(class)s_certificate_approver', on_delete=models.CASCADE)
     ca = models.ForeignKey(CertificateAuthority, null=True, on_delete=models.CASCADE)
 
     def __str__(self) -> str:
-        return f'{self.get_status_display()} Certificate requested by {self.requester.username}'
+        username = self.requester.username if self.requester else 'MISSING USERNAME'
+        return f'[{self.get_status_display()}] Certificate requested by {username}'

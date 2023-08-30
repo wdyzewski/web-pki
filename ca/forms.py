@@ -1,6 +1,7 @@
 from typing import Dict, Any
 from django import forms
-from .common import is_valid_csr
+from .common import is_valid_csr, check_ca_purpose
+from .models import Certificate
 
 
 class CSRForm(forms.Form):
@@ -25,3 +26,17 @@ class CSRForm(forms.Form):
     
 class SignForm(forms.Form):
     csr_checksum = forms.CharField(widget=forms.HiddenInput())
+
+class CertDetailsForm(forms.ModelForm):
+    class Meta:
+        model = Certificate
+        fields = ['csr', 'purpose', 'ca']
+        widgets = {
+            'csr': forms.Textarea(attrs={'readonly': True})
+        }
+    
+    def clean(self) -> Dict[str, Any]:
+        cleaned_data = super().clean()
+        if not check_ca_purpose(cleaned_data['ca'], cleaned_data['purpose']):
+            raise forms.ValidationError('This CA is currently not available for signing such certificates')
+        return cleaned_data

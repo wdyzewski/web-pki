@@ -3,6 +3,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.serialization import load_pem_private_key, Encoding
 from datetime import datetime, timedelta
+from .models import CertificateAuthority, CertificatePurpose, SigningConfig
 
 CRL_URI = 'https://example.com/crl.pem' # FIXME
 DEFAULT_KEY_SIZE = 4096
@@ -88,3 +89,11 @@ def sign_csr(csr_str : str) -> str:
 
 def revoke_cert():
     """TODO"""
+
+def check_ca_purpose(ca : CertificateAuthority, purpose : str) -> bool:
+    if purpose == CertificatePurpose.PERSONAL:
+        return ca.personal_signing != SigningConfig.DISABLED
+    elif purpose == CertificatePurpose.SERVER:
+        return ca.server_signing != SigningConfig.DISABLED
+    else:
+        raise NotImplementedError("check_ca_purpose didn't expect this type of purpose")
