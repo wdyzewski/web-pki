@@ -1,3 +1,4 @@
+from django import forms
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
@@ -33,10 +34,15 @@ def upload_csr(request):
 @login_required
 def gen_csr(request):
     csr, pkey = get_new_csr_private_key(request.user.username)
-    print(csr)
-    print(pkey)
-    # TODO - print CSR and pkey; next: proceed to signing
-    return HttpResponse("Not Implemented Yet")
+    form = CSRForm(initial={'csr_text': csr})
+    form.fields['csr_file'].widget = forms.HiddenInput()
+    form.fields['csr_text'].widget.attrs['readonly'] = True
+    context = {
+        'private_key': pkey,
+        'form': form
+    }
+    # TODO somehow redirect this form to signing
+    return render(request, 'generated_csr.html', context)
 
 @login_required
 def sign(request, id):

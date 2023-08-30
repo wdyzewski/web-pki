@@ -11,7 +11,7 @@
 </table>
 <form method="POST" action="." enctype="multipart/form-data">
 {% csrf_token %}
-{{ form.as_table }}
+{{ form.as_div }}
 <button type="submit" class="btn btn-primary">Sign!</button>
 </form>
 {% endblock %}

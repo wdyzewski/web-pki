@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign{% endblock %}
+
+{% block content %}
+<h1>Sign</h1>
+<table class="table table-hover">
+{% for k, v in info.items %}
+    <tr><td>{{ k }}</td><td><pre>{{ v }}</pre></td></tr>
+{% endfor %}
+</table>
+<form method="POST" action="." enctype="multipart/form-data">
+{% csrf_token %}
+{{ form.non_field_errors }}
+<div class="alert alert-warning" role="alert">
+    Remember to save your private key somewhere safe!
+    For security reasons server only generated this key but it is not storing it anywhere - once you proceed you will have the only copy.
+</div>
+<div>
+    <label>Private key:</label>
+    <textarea readonly="true">{{ private_key }}</textarea>
+</div>
+<div>
+    {{ form.csr_text.errors }}
+    <label for="{{ form.csr_text.id_for_label }}">CSR text:</label>
+    {{ form.csr_text }}
+</div>
+<button type="submit" class="btn btn-success">Sign!</button>
+</form>
+{% endblock %}
