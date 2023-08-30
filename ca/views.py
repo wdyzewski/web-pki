@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.timezone import now
 from .forms import CSRForm, CertDetailsForm
 from .models import Certificate, CertificateAuthority, CertificateStatus
-from .common import sign_csr, get_new_csr_private_key, autosign
+from .common import get_new_csr_private_key, autosign
 
 # Create your views here.
 
@@ -74,6 +74,11 @@ def pem_as_http_response(contents, filename):
 def get_ca_pem(request, cashortname):
     ca = get_object_or_404(CertificateAuthority, shortname=cashortname)
     return pem_as_http_response(ca.public_part, f'{cashortname}.pem')
+
+@login_required
+def cert_download(request, id):
+    cert = get_object_or_404(Certificate, id=id, requester=request.user)
+    return pem_as_http_response(cert.cert, f'{request.user.username}.pem')
 
 def get_ca_crl(request, cashortname):
     ca = get_object_or_404(CertificateAuthority, shortname=cashortname)

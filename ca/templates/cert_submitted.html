@@ -4,5 +4,14 @@
 
 {% block content %}
 <h1>Certificate request submitted</h1>
-{{ cert }}
+
+<table class="table table-hover">
+    <tr><th>Certificate status</th><td>{{ cert.get_status_display }}</td></tr>
+    <tr><th>CA</th><td>{{ cert.ca.longname }}</td></tr>
+    {% if cert.cert %}
+    <tr><th>Certificate as file</th><td><a href="{% url 'cert_download' cert.id %}">Download certificate as PEM file</a></td></tr>
+    <tr><th>Certificate as text</th><td><pre>{{ cert.cert }}</pre></td></tr>
+    {% else %}
+    {% endif %}
+</table>
 {% endblock %}
