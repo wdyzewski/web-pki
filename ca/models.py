@@ -15,7 +15,7 @@ SIGNING_CONFIG_CHOICES = [
 class CertificateAuthority(models.Model):
     private_key = models.TextField()
     public_part = models.TextField()
-    revoked_list = models.TextField()
+    revoked_list = models.TextField(blank=True)
     shortname = models.CharField(max_length=10, unique=True)
     longname = models.CharField(max_length=100)
     comment = models.CharField(max_length=300)

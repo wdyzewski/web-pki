@@ -1,0 +1,6 @@
+#!/bin/bash
+
+cafile=$1
+cert=$2
+
+openssl verify -crl_check -CAfile $cafile $cert

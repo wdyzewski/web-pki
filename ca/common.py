@@ -71,18 +71,27 @@ def sign_csr(csr     : x509.CertificateSigningRequest,
     return cert
 
 def refresh_x509_crl(crl     : x509.CertificateRevocationList,
+                     ca_crt  : x509.Certificate,
                      ca_priv : rsa.RSAPrivateKey,
                      serial  : int) -> x509.CertificateRevocationList:
+    """
+    crl == None -> CRL needs to be created from scratch
+    serial <= 0 -> only refresh dates, do not add certificate
+    """
     builder = x509.CertificateRevocationListBuilder().issuer_name(
-        crl.issuer
-    ).last_update(
-        crl.last_update
+        ca_crt.issuer
     ).next_update(
         datetime.utcnow() + timedelta(days=1)
     )
-    # add revoked certs to the new CRL builder
-    for cert in crl:
-        builder = builder.add_revoked_certificate(cert)
+
+    if crl is not None:
+        builder = builder.last_update(crl.last_update)
+        # add revoked certs to the new CRL builder
+        for cert in crl:
+            builder = builder.add_revoked_certificate(cert)
+    else:
+        builder = builder.last_update(datetime(2023, 1, 1, 0, 0))
+    
     # add new certificate to the CRL (assuming serial <= 0 is only refreshing dates)
     if serial > 0:
         new_revoked_cert = x509.RevokedCertificateBuilder().serial_number(
@@ -94,17 +103,24 @@ def refresh_x509_crl(crl     : x509.CertificateRevocationList,
             new_revoked_cert    
         )
 
-    return builder.sign(ca_priv)
+    return builder.sign(
+        private_key=ca_priv,
+        algorithm=hashes.SHA256()
+    )
 
 def revoke_cert(certificate : Certificate):
     if certificate.status != CertificateStatus.SIGNED:
         return
-    crl = x509.load_pem_x509_crl(certificate.ca.revoked_list.encode())
-    serial = x509.load_der_x509_certificate(certificate.cert.encode()).serial_number
+    try:
+        crl = x509.load_pem_x509_crl(certificate.ca.revoked_list.encode())
+    except ValueError:
+        crl = None
+    serial = x509.load_pem_x509_certificate(certificate.cert.encode()).serial_number
+    ca_crt = x509.load_pem_x509_certificate(certificate.ca.public_part.encode())
     ca_pkey = load_pem_private_key(certificate.ca.private_key.encode(), password=None)
     
-    new_crl = refresh_x509_crl(crl, ca_pkey, serial)
-    certificate.ca.revoked_list = new_crl.public_bytes(serialization.Encoding.PEM)
+    new_crl = refresh_x509_crl(crl, ca_crt, ca_pkey, serial)
+    certificate.ca.revoked_list = new_crl.public_bytes(serialization.Encoding.PEM).decode()
     certificate.ca.save()
     certificate.status = CertificateStatus.REVOKED
     certificate.save()
