@@ -64,9 +64,9 @@ def cert_submitted(request, id):
     autosign(cert)
     return render(request, 'cert_submitted.html', {'cert': cert})
 
-def pem_as_http_response(contents, filename):
+def pem_as_http_response(contents : str, filename : str):
     return HttpResponse(
-        contents,
+        contents.replace('\r\n', '\n'),
         content_type='application/x-pem-file',
         headers={'Content-Disposition': f'attachment; filename="{filename}"'}
     )
