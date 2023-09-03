@@ -58,7 +58,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Generating private key
-        self.stdout.write(f'Generating {options["key_size"]} bytes key...')
+        self.stdout.write(f'Generating {options["key_size"]} bits key...')
         key = rsa.generate_private_key(
             public_exponent=65537,
             key_size=options['key_size']
